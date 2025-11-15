@@ -2,8 +2,855 @@
 <html>
   <head>
     <base target="_top">
+    <meta charset="UTF-8">
+    <title>Google Tasks ダッシュボード</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+        background: #f4f6fb;
+        color: #111827;
+      }
+      .app { display: flex; min-height: 100vh; }
+      .sidebar {
+        width: 260px;
+        background: #0f172a;
+        color: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 2rem;
+      }
+      .logo {
+        font-weight: 700;
+        font-size: 1.1rem;
+        padding: 1.5rem 1.75rem;
+        border-bottom: 1px solid rgba(255,255,255,.08);
+      }
+      .menu-group { padding-top: 1.1rem; }
+      .menu-title {
+        font-size: 0.75rem;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: rgba(248,250,252,.6);
+        margin: 0;
+      }
+      .menu-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 1.75rem .4rem;
+        gap: .5rem;
+      }
+      .menu-header button {
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.15rem 0.55rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: #0f172a;
+      }
+      .menu-header button:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+      }
+      .menu-list { list-style: none; margin: 0; padding: 0; }
+      .menu-item {
+        padding: 0.6rem 1.75rem;
+        cursor: pointer;
+        color: rgba(248,250,252,.75);
+        display: flex;
+        align-items: center;
+        border-left: 3px solid transparent;
+        transition: background .2s, color .2s;
+        gap: .75rem;
+      }
+      .menu-item:hover { background: rgba(248,250,252,.08); color: #fff; }
+      .menu-item.active {
+        background: rgba(59,130,246,.2);
+        color: #fff;
+        border-left-color: #3b82f6;
+      }
+      .menu-item.disabled { cursor: default; opacity: .6; }
+      .project-actions {
+        margin-left: auto;
+        display: flex;
+        gap: .25rem;
+      }
+      .project-actions button {
+        border: none;
+        border-radius: 0.45rem;
+        padding: 0.2rem 0.35rem;
+        font-size: 0.7rem;
+        background: rgba(248,250,252,.12);
+        color: inherit;
+        cursor: pointer;
+      }
+      .project-actions button:hover {
+        background: rgba(248,250,252,.25);
+      }
+      .content {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+      }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .toolbar h1 { margin: 0 0 .2rem; font-size: 1.75rem; }
+      .toolbar p { margin: 0; color: #6b7280; }
+      #newTaskBtn {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: .65rem;
+        padding: .65rem 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #newTaskBtn:disabled { opacity: .5; cursor: not-allowed; }
+      .summary {
+        margin: 1.5rem 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 1.2rem 1.4rem;
+        box-shadow: 0 12px 30px rgba(15,23,42,.08);
+      }
+      .card p { margin: 0; font-size: .85rem; color: #6b7280; }
+      .card h2 { margin: .3rem 0 0; font-size: 2rem; color: #111827; }
+      .tasks { display: grid; gap: 1.5rem; }
+      .task-section {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        box-shadow: 0 12px 30px rgba(15,23,42,.08);
+      }
+      .task-section h3 { margin: 0 0 1rem; font-size: 1rem; }
+      .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+      .task-item {
+        border: 1px solid #e5e7eb;
+        border-radius: .85rem;
+        padding: .85rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+      }
+      .task-item.completed { opacity: .6; }
+      .task-main { display: flex; flex-direction: column; gap: .3rem; }
+      .task-title { font-weight: 600; }
+      .task-meta { font-size: .8rem; color: #6b7280; display: flex; flex-wrap: wrap; gap: .5rem; }
+      .chip {
+        background: #eef2ff;
+        color: #4338ca;
+        padding: .15rem .6rem;
+        border-radius: 999px;
+        font-size: .75rem;
+      }
+      .task-actions { display: flex; gap: .35rem; }
+      .task-actions button {
+        border: none;
+        border-radius: .6rem;
+        padding: .35rem .75rem;
+        cursor: pointer;
+        font-size: .8rem;
+        font-weight: 600;
+      }
+      .task-actions .complete { background: #10b981; color: #fff; }
+      .task-actions .undo { background: #f97316; color: #fff; }
+      .task-actions .edit { background: #e0e7ff; color: #1d4ed8; }
+      .task-actions .delete { background: #fee2e2; color: #b91c1c; }
+      .empty {
+        text-align: center;
+        color: #9ca3af;
+        border: 1px dashed #d1d5db;
+        padding: 1rem;
+        border-radius: .75rem;
+      }
+      .loading-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 0;
+        background: #3b82f6;
+        transition: width .3s;
+        z-index: 50;
+      }
+      .loading-bar.active { width: 100%; }
+      dialog {
+        border: none;
+        border-radius: 1rem;
+        padding: 0;
+        width: 420px;
+        max-width: calc(100% - 2rem);
+      }
+      dialog::backdrop { background: rgba(15,23,42,.55); }
+      dialog.open { display: block; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+      .dialog-header { padding: 1.25rem 1.5rem 0; }
+      form { padding: 0 1.5rem 1.5rem; }
+      .field { display: flex; flex-direction: column; margin-top: .9rem; }
+      .field label { font-size: .85rem; color: #4b5563; margin-bottom: .35rem; }
+      .field input,
+      .field select,
+      .field textarea {
+        border: 1px solid #d1d5db;
+        border-radius: .6rem;
+        padding: .55rem;
+        font-size: .95rem;
+        font-family: inherit;
+      }
+      .field textarea { resize: vertical; min-height: 90px; }
+      .dialog-actions {
+        margin-top: 1.2rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: .6rem;
+      }
+      .dialog-actions button {
+        border: none;
+        border-radius: .6rem;
+        padding: .55rem 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .dialog-actions .secondary { background: #e5e7eb; color: #374151; }
+      .dialog-actions .primary { background: #2563eb; color: #fff; }
+      .toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        background: #111827;
+        color: #fff;
+        padding: .9rem 1.2rem;
+        border-radius: .7rem;
+        opacity: 0;
+        transform: translateY(15px);
+        transition: opacity .3s, transform .3s;
+        pointer-events: none;
+      }
+      .toast.show { opacity: 1; transform: translateY(0); }
+      .toast.error { background: #b91c1c; }
+      @media (max-width: 960px) {
+        .app { flex-direction: column; }
+        .sidebar { width: 100%; }
+        .content { padding: 1.25rem; }
+        .toolbar { flex-direction: column; align-items: flex-start; }
+      }
+    </style>
   </head>
   <body>
-    
+    <div class="loading-bar" id="loadingBar"></div>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="logo">Google Tasks</div>
+        <div class="menu-group">
+          <div class="menu-header">
+            <p class="menu-title">スマートビュー</p>
+          </div>
+          <ul class="menu-list" id="filterMenu"></ul>
+        </div>
+        <div class="menu-group">
+          <div class="menu-header">
+            <p class="menu-title">プロジェクト</p>
+            <button id="addProjectBtn" title="新規プロジェクト">＋</button>
+          </div>
+          <ul class="menu-list" id="projectMenu"></ul>
+        </div>
+      </aside>
+      <main class="content">
+        <header class="toolbar">
+          <div>
+            <h1 id="viewTitle">今日のタスク</h1>
+            <p id="viewSubtitle">読み込み中...</p>
+          </div>
+          <button id="newTaskBtn">+ 新規タスク</button>
+        </header>
+        <section class="summary">
+          <article class="card">
+            <p>未完了タスク</p>
+            <h2 id="openCount">0</h2>
+          </article>
+          <article class="card">
+            <p>完了済のタスク</p>
+            <h2 id="completedCount">0</h2>
+          </article>
+        </section>
+        <section class="tasks">
+          <article class="task-section">
+            <h3>未完了タスク</h3>
+            <ul class="task-list" id="openTasks"></ul>
+          </article>
+          <article class="task-section">
+            <h3>完了済のタスク</h3>
+            <ul class="task-list" id="completedTasks"></ul>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="taskDialog">
+      <div class="dialog-header">
+        <h2 id="dialogTitle">新規タスク</h2>
+      </div>
+      <form id="taskForm">
+        <div class="field">
+          <label for="taskListId">プロジェクト</label>
+          <select id="taskListId" name="listId" required></select>
+        </div>
+        <div class="field">
+          <label for="taskTitle">タイトル</label>
+          <input id="taskTitle" name="title" type="text" placeholder="タスク名" required />
+        </div>
+        <div class="field">
+          <label for="taskDue">期限日</label>
+          <input id="taskDue" name="dueDate" type="date" />
+        </div>
+        <div class="field">
+          <label for="taskNotes">メモ</label>
+          <textarea id="taskNotes" name="notes" placeholder="詳細を入力"></textarea>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="cancelDialog">キャンセル</button>
+          <button type="submit" class="primary" id="saveTaskBtn">保存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="projectDialog">
+      <div class="dialog-header">
+        <h2 id="projectDialogTitle">新規プロジェクト</h2>
+      </div>
+      <form id="projectForm">
+        <div class="field">
+          <label for="projectTitle">プロジェクト名</label>
+          <input id="projectTitle" name="title" type="text" placeholder="プロジェクト名" required />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="cancelProjectDialog">キャンセル</button>
+          <button type="submit" class="primary" id="saveProjectBtn">保存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const FILTERS = [
+        { id: 'today', label: '今日' },
+        { id: 'overdue', label: '期限切れ' },
+        { id: 'tomorrow', label: '明日' },
+        { id: 'thisWeek', label: '今週' },
+        { id: 'next7', label: '次の7日間' },
+        { id: 'planned', label: '計画' },
+        { id: 'noDue', label: '期限なし' },
+        { id: 'completed', label: '完了済' }
+      ];
+
+      const state = {
+        current: { type: 'filter', id: 'today' },
+        lists: [],
+        editingTask: null,
+        editingProject: null
+      };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        buildFilterMenu();
+        attachDialogEvents();
+        attachProjectDialogEvents();
+        loadTaskLists();
+        loadDashboard(state.current);
+      });
+
+      function buildFilterMenu() {
+        const container = document.getElementById('filterMenu');
+        container.innerHTML = '';
+        FILTERS.forEach(filter => {
+          const li = document.createElement('li');
+          li.className = 'menu-item';
+          li.dataset.filterId = filter.id;
+          const label = document.createElement('span');
+          label.textContent = filter.label;
+          li.appendChild(label);
+          li.addEventListener('click', () => selectFilter(filter.id));
+          container.appendChild(li);
+        });
+      }
+
+      function renderProjectMenu() {
+        const container = document.getElementById('projectMenu');
+        container.innerHTML = '';
+        if (!state.lists.length) {
+          const empty = document.createElement('li');
+          empty.className = 'menu-item disabled';
+          empty.textContent = 'リストがありません';
+          container.appendChild(empty);
+          document.getElementById('newTaskBtn').disabled = true;
+          document.getElementById('addProjectBtn').disabled = false;
+          highlightMenu(state.current);
+          return;
+        }
+
+        document.getElementById('newTaskBtn').disabled = false;
+        state.lists.forEach(list => {
+          const li = document.createElement('li');
+          li.className = 'menu-item';
+          li.dataset.listId = list.id;
+
+          const label = document.createElement('span');
+          label.textContent = list.title;
+          li.appendChild(label);
+
+          const actions = document.createElement('div');
+          actions.className = 'project-actions';
+
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.textContent = '編集';
+          editBtn.addEventListener('click', evt => {
+            evt.stopPropagation();
+            openProjectDialog(list);
+          });
+          actions.appendChild(editBtn);
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.textContent = '削除';
+          deleteBtn.addEventListener('click', evt => {
+            evt.stopPropagation();
+            deleteProject(list);
+          });
+          actions.appendChild(deleteBtn);
+
+          li.appendChild(actions);
+          li.addEventListener('click', () => selectProject(list.id));
+          container.appendChild(li);
+        });
+        highlightMenu(state.current);
+        populateListSelect();
+      }
+
+      function loadTaskLists(afterLoad) {
+        google.script.run
+          .withSuccessHandler(lists => {
+            state.lists = lists;
+            renderProjectMenu();
+            if (typeof afterLoad === 'function') {
+              afterLoad(lists);
+            }
+          })
+          .withFailureHandler(showError)
+          .getTaskLists();
+      }
+
+      function loadDashboard(context) {
+        setLoading(true);
+        google.script.run
+          .withSuccessHandler(data => {
+            setLoading(false);
+            state.current = data.context || context;
+            renderDashboard(data);
+            highlightMenu(state.current);
+          })
+          .withFailureHandler(err => {
+            setLoading(false);
+            showError(err);
+          })
+          .getDashboardData(context);
+      }
+
+      function renderDashboard(data) {
+        document.getElementById('viewTitle').textContent = data.title;
+        const updated = new Date(data.generatedAt).toLocaleString('ja-JP');
+        document.getElementById('viewSubtitle').textContent = `最終更新: ${updated}`;
+        document.getElementById('openCount').textContent = data.totals.open;
+        document.getElementById('completedCount').textContent = data.totals.completed;
+        renderTaskList(document.getElementById('openTasks'), data.open, false);
+        renderTaskList(document.getElementById('completedTasks'), data.completed, true);
+      }
+
+      function renderTaskList(container, tasks, isCompleted) {
+        container.innerHTML = '';
+        if (!tasks.length) {
+          const empty = document.createElement('li');
+          empty.className = 'empty';
+          empty.textContent = isCompleted ? '完了済タスクはありません' : 'タスクはありません';
+          container.appendChild(empty);
+          return;
+        }
+        tasks.forEach(task => {
+          const item = document.createElement('li');
+          item.className = `task-item${task.isCompleted ? ' completed' : ''}`;
+
+          const main = document.createElement('div');
+          main.className = 'task-main';
+
+          const title = document.createElement('div');
+          title.className = 'task-title';
+          title.textContent = task.title;
+          main.appendChild(title);
+
+          const meta = document.createElement('div');
+          meta.className = 'task-meta';
+
+          const listChip = document.createElement('span');
+          listChip.className = 'chip';
+          listChip.textContent = task.listTitle;
+          meta.appendChild(listChip);
+
+          const due = document.createElement('span');
+          due.textContent = task.dueLabel || '期限なし';
+          meta.appendChild(due);
+
+          if (task.notes) {
+            const note = document.createElement('span');
+            note.textContent = task.notes;
+            meta.appendChild(note);
+          }
+
+          main.appendChild(meta);
+
+          const actions = document.createElement('div');
+          actions.className = 'task-actions';
+
+          const completeBtn = document.createElement('button');
+          completeBtn.className = task.isCompleted ? 'undo' : 'complete';
+          completeBtn.textContent = task.isCompleted ? '未完了' : '完了';
+          completeBtn.addEventListener('click', () => toggleCompletion(task));
+          actions.appendChild(completeBtn);
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit';
+          editBtn.textContent = '編集';
+          editBtn.addEventListener('click', () => openTaskDialog(task));
+          actions.appendChild(editBtn);
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete';
+          deleteBtn.textContent = '削除';
+          deleteBtn.addEventListener('click', () => removeTask(task));
+          actions.appendChild(deleteBtn);
+
+          item.appendChild(main);
+          item.appendChild(actions);
+          container.appendChild(item);
+        });
+      }
+
+      function selectFilter(filterId) {
+        loadDashboard({ type: 'filter', id: filterId });
+      }
+
+      function selectProject(listId) {
+        loadDashboard({ type: 'project', listId });
+      }
+
+      function highlightMenu(context) {
+        document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+        if (context.type === 'project') {
+          const node = document.querySelector(`.menu-item[data-list-id="${context.listId}"]`);
+          if (node) node.classList.add('active');
+        } else {
+          const node = document.querySelector(`.menu-item[data-filter-id="${context.id}"]`);
+          if (node) node.classList.add('active');
+        }
+      }
+
+      function attachDialogEvents() {
+        const dialog = document.getElementById('taskDialog');
+        const form = document.getElementById('taskForm');
+        document.getElementById('newTaskBtn').addEventListener('click', () => openTaskDialog());
+        document.getElementById('cancelDialog').addEventListener('click', closeTaskDialog);
+        form.addEventListener('submit', handleTaskSubmit);
+        if (!dialog.showModal) {
+          dialog.showModal = () => dialog.classList.add('open');
+          dialog.close = () => dialog.classList.remove('open');
+        }
+      }
+
+      function attachProjectDialogEvents() {
+        const dialog = document.getElementById('projectDialog');
+        const form = document.getElementById('projectForm');
+        document.getElementById('addProjectBtn').addEventListener('click', () => openProjectDialog());
+        document.getElementById('cancelProjectDialog').addEventListener('click', closeProjectDialog);
+        form.addEventListener('submit', handleProjectSubmit);
+        if (!dialog.showModal) {
+          dialog.showModal = () => dialog.classList.add('open');
+          dialog.close = () => dialog.classList.remove('open');
+        }
+      }
+
+      function openTaskDialog(task) {
+        state.editingTask = task || null;
+        const dialog = document.getElementById('taskDialog');
+        const form = document.getElementById('taskForm');
+        const titleEl = document.getElementById('dialogTitle');
+        populateListSelect(task ? task.listId : getDefaultListId());
+
+        if (task) {
+          titleEl.textContent = 'タスクを編集';
+          form.listId.value = task.listId;
+          form.title.value = task.title || '';
+          form.dueDate.value = task.due ? formatDateForInput(task.due) : '';
+          form.notes.value = task.notes || '';
+        } else {
+          titleEl.textContent = '新規タスク';
+          form.reset();
+          form.listId.value = getDefaultListId();
+        }
+        document.getElementById('saveTaskBtn').disabled = false;
+        dialog.showModal();
+      }
+
+      function closeTaskDialog() {
+        const dialog = document.getElementById('taskDialog');
+        const form = document.getElementById('taskForm');
+        form.reset();
+        state.editingTask = null;
+        dialog.close();
+      }
+
+      function openProjectDialog(project) {
+        state.editingProject = project || null;
+        const dialog = document.getElementById('projectDialog');
+        const form = document.getElementById('projectForm');
+        const titleEl = document.getElementById('projectDialogTitle');
+        document.getElementById('saveProjectBtn').disabled = false;
+
+        if (project) {
+          titleEl.textContent = 'プロジェクトを編集';
+          form.title.value = project.title;
+        } else {
+          titleEl.textContent = '新規プロジェクト';
+          form.reset();
+        }
+        dialog.showModal();
+      }
+
+      function closeProjectDialog() {
+        const dialog = document.getElementById('projectDialog');
+        const form = document.getElementById('projectForm');
+        form.reset();
+        state.editingProject = null;
+        dialog.close();
+      }
+
+      function populateListSelect(selectedId) {
+        const select = document.getElementById('taskListId');
+        select.innerHTML = '';
+        if (!state.lists.length) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = 'リストがありません';
+          select.appendChild(option);
+          select.disabled = true;
+          return;
+        }
+        select.disabled = false;
+        state.lists.forEach(list => {
+          const option = document.createElement('option');
+          option.value = list.id;
+          option.textContent = list.title;
+          if (selectedId && selectedId === list.id) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        });
+        if (!selectedId && state.current.type === 'project') {
+          select.value = state.current.listId;
+        }
+      }
+
+      function getDefaultListId() {
+        if (state.current.type === 'project') {
+          return state.current.listId;
+        }
+        return state.lists[0] ? state.lists[0].id : '';
+      }
+
+      function handleTaskSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const payload = {
+          listId: form.listId.value,
+          title: form.title.value.trim(),
+          dueDate: form.dueDate.value,
+          notes: form.notes.value.trim()
+        };
+
+        if (!payload.title) {
+          showToast('タイトルを入力してください。', true);
+          return;
+        }
+
+        const editingTask = state.editingTask;
+        if (editingTask) {
+          payload.id = editingTask.id;
+          payload.sourceListId = editingTask.listId;
+        }
+
+        document.getElementById('saveTaskBtn').disabled = true;
+
+        const runner = google.script.run
+          .withSuccessHandler(result => {
+            showToast('タスクを保存しました。');
+            closeTaskDialog();
+            const movedToDifferentProject =
+              editingTask &&
+              editingTask.listId !== payload.listId &&
+              state.current.type === 'project' &&
+              state.current.listId === editingTask.listId;
+            if (movedToDifferentProject) {
+              loadDashboard({ type: 'project', listId: payload.listId });
+            } else {
+              loadDashboard(state.current);
+            }
+          })
+          .withFailureHandler(err => {
+            document.getElementById('saveTaskBtn').disabled = false;
+            showError(err);
+          });
+
+        if (state.editingTask) {
+          runner.updateTask(payload);
+        } else {
+          runner.createTask(payload);
+        }
+      }
+
+      function handleProjectSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const payload = {
+          title: form.title.value.trim()
+        };
+
+        if (!payload.title) {
+          showToast('プロジェクト名を入力してください。', true);
+          return;
+        }
+
+        if (state.editingProject) {
+          payload.id = state.editingProject.id;
+        }
+
+        document.getElementById('saveProjectBtn').disabled = true;
+
+        const runner = google.script.run
+          .withSuccessHandler(result => {
+            const message = state.editingProject ? 'プロジェクトを更新しました。' : 'プロジェクトを作成しました。';
+            showToast(message);
+            closeProjectDialog();
+            loadTaskLists(() => {
+              if (state.editingProject) {
+                if (state.current.type === 'project' && state.current.listId === payload.id) {
+                  loadDashboard(state.current);
+                }
+              } else if (result && result.id) {
+                selectProject(result.id);
+              }
+            });
+          })
+          .withFailureHandler(err => {
+            document.getElementById('saveProjectBtn').disabled = false;
+            showError(err);
+          });
+
+        if (state.editingProject) {
+          runner.updateTaskList(payload);
+        } else {
+          runner.createTaskList(payload);
+        }
+      }
+
+      function deleteProject(project) {
+        if (!confirm(`「${project.title}」を削除しますか？\nリスト内のすべてのタスクも削除されます。`)) {
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(() => {
+            showToast('プロジェクトを削除しました。');
+            const removedCurrent =
+              state.current.type === 'project' && state.current.listId === project.id;
+            loadTaskLists(() => {
+              if (removedCurrent) {
+                selectFilter('today');
+              } else {
+                loadDashboard(state.current);
+              }
+            });
+          })
+          .withFailureHandler(showError)
+          .deleteTaskList({ id: project.id });
+      }
+
+      function removeTask(task) {
+        if (!confirm(`「${task.title}」を削除しますか？`)) {
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(() => {
+            showToast('タスクを削除しました。');
+            loadDashboard(state.current);
+          })
+          .withFailureHandler(showError)
+          .deleteTask({ listId: task.listId, id: task.id });
+      }
+
+      function toggleCompletion(task) {
+        google.script.run
+          .withSuccessHandler(() => {
+            const msg = task.isCompleted ? 'タスクを未完了に戻しました。' : 'タスクを完了にしました。';
+            showToast(msg);
+            loadDashboard(state.current);
+          })
+          .withFailureHandler(showError)
+          .toggleTaskCompletion({
+            listId: task.listId,
+            id: task.id,
+            completed: !task.isCompleted
+          });
+      }
+
+      function formatDateForInput(value) {
+        if (!value) {
+          return '';
+        }
+        const date = new Date(value);
+        const tzOffset = date.getTimezoneOffset();
+        const local = new Date(date.getTime() - tzOffset * 60000);
+        return local.toISOString().slice(0, 10);
+      }
+
+      function setLoading(isLoading) {
+        const bar = document.getElementById('loadingBar');
+        if (isLoading) {
+          bar.classList.add('active');
+        } else {
+          setTimeout(() => bar.classList.remove('active'), 300);
+        }
+      }
+
+      function showError(err) {
+        const message = err && err.message ? err.message : err;
+        console.error(message);
+        showToast(`エラー: ${message}`, true);
+      }
+
+      function showToast(message, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast show${isError ? ' error' : ''}`;
+        setTimeout(() => toast.classList.remove('show', 'error'), 3200);
+      }
+    </script>
   </body>
 </html>
