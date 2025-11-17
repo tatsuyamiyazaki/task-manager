@@ -223,6 +223,22 @@ function buildDueLabel(dateString, tz) {
   return label + ' (' + dayNames[(index - 1) % dayNames.length] + ')';
 }
 
+function sortTasksByDue(tasks) {
+  return tasks.slice().sort(function (a, b) {
+    var aNoDue = a.dueKey == null;
+    var bNoDue = b.dueKey == null;
+    if (aNoDue && bNoDue) {
+      return a.title.localeCompare(b.title);
+    }
+    if (aNoDue) return -1;
+    if (bNoDue) return 1;
+    if (a.dueKey !== b.dueKey) {
+      return a.dueKey - b.dueKey;
+    }
+    return a.title.localeCompare(b.title);
+  });
+}
+
 function applyFilter(tasks, context, tz) {
   var filterId = context.type === 'project' ? 'project' : context.id;
   var now = new Date();
@@ -287,10 +303,12 @@ function applyFilter(tasks, context, tz) {
       break;
   }
 
-  var open = filtered.filter(function (task) {
+  var ordered = sortTasksByDue(filtered);
+
+  var open = ordered.filter(function (task) {
     return !task.isCompleted;
   });
-  var completed = filtered.filter(function (task) {
+  var completed = ordered.filter(function (task) {
     return task.isCompleted;
   });
 
