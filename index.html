@@ -6,21 +6,48 @@
     <title>Google Tasks ダッシュボード</title>
     <style>
       *, *::before, *::after { box-sizing: border-box; }
+      :root { --sidebar-width: 286px; }
       body {
         margin: 0;
         font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
         background: #f4f6fb;
         color: #111827;
       }
-      .app { display: flex; min-height: 100vh; }
+      .app {
+        display: flex;
+        min-height: 100vh;
+        height: 100vh;
+        overflow: hidden;
+      }
       .sidebar {
-        width: 260px;
+        width: var(--sidebar-width);
         background: #0f172a;
         color: #f8fafc;
         display: flex;
         flex-direction: column;
         padding-bottom: 2rem;
+        overflow-y: auto;
       }
+      .resizing { user-select: none; cursor: col-resize; }
+      .sidebar-resizer {
+        width: 6px;
+        flex-shrink: 0;
+        cursor: col-resize;
+        position: relative;
+        background: transparent;
+      }
+      .sidebar-resizer::after {
+        content: '';
+        position: absolute;
+        left: 2px;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: rgba(15,23,42,.15);
+        transition: background .2s;
+      }
+      .sidebar-resizer:hover::after,
+      .resizing .sidebar-resizer::after { background: rgba(15,23,42,.3); }
       .logo {
         font-weight: 700;
         font-size: 1.1rem;
@@ -93,6 +120,7 @@
         flex: 1;
         padding: 2rem;
         overflow-y: auto;
+        min-height: 0;
       }
       .toolbar {
         display: flex;
@@ -240,8 +268,9 @@
       .toast.show { opacity: 1; transform: translateY(0); }
       .toast.error { background: #b91c1c; }
       @media (max-width: 960px) {
-        .app { flex-direction: column; }
-        .sidebar { width: 100%; }
+        .app { flex-direction: column; height: auto; overflow: visible; }
+        .sidebar { width: 100%; overflow: visible; }
+        .sidebar-resizer { display: none; }
         .content { padding: 1.25rem; }
         .toolbar { flex-direction: column; align-items: flex-start; }
       }
@@ -266,6 +295,7 @@
           <ul class="menu-list" id="projectMenu"></ul>
         </div>
       </aside>
+      <div class="sidebar-resizer" id="sidebarResizer" aria-label="サイドバーの幅を変更"></div>
       <main class="content">
         <header class="toolbar">
           <div>
@@ -344,6 +374,78 @@
     <div class="toast" id="toast"></div>
 
     <script>
+      const SIDEBAR_WIDTH_KEY = 'sidebarWidth';
+      const DEFAULT_SIDEBAR_WIDTH = 286;
+      const MIN_SIDEBAR_WIDTH = 220;
+      const MAX_SIDEBAR_WIDTH = 480;
+
+      function clampSidebarWidth(value) {
+        return Math.min(Math.max(value, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+      }
+
+      function applySidebarWidth(value, persist = false) {
+        const width = clampSidebarWidth(value);
+        document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
+        if (persist) {
+          try {
+            localStorage.setItem(SIDEBAR_WIDTH_KEY, width);
+          } catch (err) {
+            console.warn('Failed to store sidebar width', err);
+          }
+        }
+      }
+
+      function loadSidebarWidth() {
+        try {
+          const stored = parseInt(localStorage.getItem(SIDEBAR_WIDTH_KEY), 10);
+          if (!Number.isNaN(stored)) {
+            return clampSidebarWidth(stored);
+          }
+        } catch (err) {
+          console.warn('Failed to load sidebar width', err);
+        }
+        return DEFAULT_SIDEBAR_WIDTH;
+      }
+
+      function initSidebarResizer() {
+        const resizer = document.getElementById('sidebarResizer');
+        const app = document.querySelector('.app');
+        if (!resizer || !app) {
+          return;
+        }
+
+        applySidebarWidth(loadSidebarWidth());
+
+        let isDragging = false;
+
+        const handleMove = evt => {
+          if (!isDragging) return;
+          const appRect = app.getBoundingClientRect();
+          const newWidth = evt.clientX - appRect.left;
+          applySidebarWidth(newWidth, true);
+        };
+
+        const stopDrag = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          document.body.classList.remove('resizing');
+          window.removeEventListener('mousemove', handleMove);
+          window.removeEventListener('mouseup', stopDrag);
+        };
+
+        const startDrag = evt => {
+          if (window.innerWidth <= 960) return;
+          isDragging = true;
+          document.body.classList.add('resizing');
+          handleMove(evt);
+          window.addEventListener('mousemove', handleMove);
+          window.addEventListener('mouseup', stopDrag);
+          evt.preventDefault();
+        };
+
+        resizer.addEventListener('mousedown', startDrag);
+      }
+
       const FILTERS = [
         { id: 'today', label: '今日' },
         { id: 'overdue', label: '期限切れ' },
@@ -363,6 +465,7 @@
       };
 
       document.addEventListener('DOMContentLoaded', () => {
+        initSidebarResizer();
         buildFilterMenu();
         attachDialogEvents();
         attachProjectDialogEvents();
