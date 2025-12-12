@@ -10,9 +10,8 @@
       body {
         margin: 0;
         font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
-        background: #f4f6fb;
-        color: #111827;
-        filter: grayscale(100%);
+        background: #111827;
+        color: #f9fafb;
       }
       .app {
         display: flex;
@@ -22,7 +21,7 @@
       }
       .sidebar {
         width: var(--sidebar-width);
-        background: #0f172a;
+        background: #1F2937;
         color: #f8fafc;
         display: flex;
         flex-direction: column;
@@ -44,11 +43,11 @@
         top: 0;
         width: 2px;
         height: 100%;
-        background: rgba(15,23,42,.15);
+        background: rgba(255,255,255,.1);
         transition: background .2s;
       }
       .sidebar-resizer:hover::after,
-      .resizing .sidebar-resizer::after { background: rgba(15,23,42,.3); }
+      .resizing .sidebar-resizer::after { background: rgba(255,255,255,.25); }
       .logo {
         font-weight: 700;
         font-size: 1.1rem;
@@ -71,13 +70,15 @@
         gap: .5rem;
       }
       .menu-header button {
-        border: none;
+        background: transparent;
+        border: 1px solid rgba(248,250,252,.4);
         border-radius: 0.5rem;
         padding: 0.15rem 0.55rem;
         font-weight: 700;
         cursor: pointer;
-        color: #0f172a;
+        color: #f8fafc;
       }
+      .menu-header button:hover { background: rgba(248,250,252,.1); }
       .menu-header button:disabled {
         opacity: .5;
         cursor: not-allowed;
@@ -106,16 +107,16 @@
         gap: .25rem;
       }
       .project-actions button {
-        border: none;
+        background: transparent;
+        border: 1px solid rgba(248,250,252,.3);
         border-radius: 0.45rem;
         padding: 0.2rem 0.35rem;
         font-size: 0.7rem;
-        background: rgba(248,250,252,.12);
         color: inherit;
         cursor: pointer;
       }
       .project-actions button:hover {
-        background: rgba(248,250,252,.25);
+        background: rgba(248,250,252,.1);
       }
       .content {
         flex: 1;
@@ -130,16 +131,17 @@
         gap: 1rem;
       }
       .toolbar h1 { margin: 0 0 .2rem; font-size: 1.75rem; }
-      .toolbar p { margin: 0; color: #6b7280; }
+      .toolbar p { margin: 0; color: #9ca3af; }
       #newTaskBtn {
-        background: #2563eb;
-        color: #fff;
-        border: none;
+        background: transparent;
+        color: #3b82f6;
+        border: 1px solid #3b82f6;
         border-radius: .65rem;
         padding: .65rem 1.2rem;
         font-weight: 600;
         cursor: pointer;
       }
+      #newTaskBtn:hover { background: rgba(59,130,246,.1); }
       #newTaskBtn:disabled { opacity: .5; cursor: not-allowed; }
       .summary {
         margin: 1.5rem 0;
@@ -148,24 +150,24 @@
         gap: 1rem;
       }
       .card {
-        background: #fff;
+        background: #1F2937;
         border-radius: 1rem;
         padding: 1.2rem 1.4rem;
-        box-shadow: 0 12px 30px rgba(15,23,42,.08);
+        box-shadow: 0 12px 30px rgba(0,0,0,.3);
       }
-      .card p { margin: 0; font-size: .85rem; color: #6b7280; }
-      .card h2 { margin: .3rem 0 0; font-size: 2rem; color: #111827; }
+      .card p { margin: 0; font-size: .85rem; color: #9ca3af; }
+      .card h2 { margin: .3rem 0 0; font-size: 2rem; color: #f9fafb; }
       .tasks { display: grid; gap: 1.5rem; }
       .task-section {
-        background: #fff;
+        background: #1F2937;
         border-radius: 1rem;
         padding: 1.25rem;
-        box-shadow: 0 12px 30px rgba(15,23,42,.08);
+        box-shadow: 0 12px 30px rgba(0,0,0,.3);
       }
       .task-section h3 { margin: 0 0 1rem; font-size: 1rem; }
       .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
       .task-item {
-        border: 1px solid #e5e7eb;
+        border: 1px solid #374151;
         border-radius: .85rem;
         padding: .85rem 1rem;
         display: flex;
@@ -176,10 +178,10 @@
       .task-item.completed { opacity: .6; }
       .task-main { display: flex; flex-direction: column; gap: .3rem; }
       .task-title { font-weight: 600; }
-      .task-meta { font-size: .8rem; color: #6b7280; display: flex; flex-wrap: wrap; gap: .5rem; }
+      .task-meta { font-size: .8rem; color: #9ca3af; display: flex; flex-wrap: wrap; gap: .5rem; }
       .chip {
-        background: #eef2ff;
-        color: #4338ca;
+        background: #374151;
+        color: #93c5fd;
         padding: .15rem .6rem;
         border-radius: 999px;
         font-size: .75rem;
@@ -193,14 +195,18 @@
         font-size: .8rem;
         font-weight: 600;
       }
-      .task-actions .complete { background: #10b981; color: #fff; }
-      .task-actions .undo { background: #f97316; color: #fff; }
-      .task-actions .edit { background: #e0e7ff; color: #1d4ed8; }
-      .task-actions .delete { background: #fee2e2; color: #b91c1c; }
+      .task-actions .complete { background: transparent; color: #10b981; border: 1px solid #10b981; }
+      .task-actions .complete:hover { background: rgba(16,185,129,.1); }
+      .task-actions .undo { background: transparent; color: #f97316; border: 1px solid #f97316; }
+      .task-actions .undo:hover { background: rgba(249,115,22,.1); }
+      .task-actions .edit { background: transparent; color: #3b82f6; border: 1px solid #3b82f6; }
+      .task-actions .edit:hover { background: rgba(59,130,246,.1); }
+      .task-actions .delete { background: transparent; color: #ef4444; border: 1px solid #ef4444; }
+      .task-actions .delete:hover { background: rgba(239,68,68,.1); }
       .empty {
         text-align: center;
-        color: #9ca3af;
-        border: 1px dashed #d1d5db;
+        color: #6b7280;
+        border: 1px dashed #4b5563;
         padding: 1rem;
         border-radius: .75rem;
       }
@@ -221,21 +227,25 @@
         padding: 0;
         width: 420px;
         max-width: calc(100% - 2rem);
+        background: #1F2937;
+        color: #f9fafb;
       }
-      dialog::backdrop { background: rgba(15,23,42,.55); }
+      dialog::backdrop { background: rgba(0,0,0,.7); }
       dialog.open { display: block; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); }
       .dialog-header { padding: 1.25rem 1.5rem 0; }
       form { padding: 0 1.5rem 1.5rem; }
       .field { display: flex; flex-direction: column; margin-top: .9rem; }
-      .field label { font-size: .85rem; color: #4b5563; margin-bottom: .35rem; }
+      .field label { font-size: .85rem; color: #9ca3af; margin-bottom: .35rem; }
       .field input,
       .field select,
       .field textarea {
-        border: 1px solid #d1d5db;
+        border: 1px solid #4b5563;
         border-radius: .6rem;
         padding: .55rem;
         font-size: .95rem;
         font-family: inherit;
+        background: #111827;
+        color: #f9fafb;
       }
       .field textarea { resize: vertical; min-height: 90px; }
       .dialog-actions {
@@ -251,8 +261,10 @@
         font-weight: 600;
         cursor: pointer;
       }
-      .dialog-actions .secondary { background: #e5e7eb; color: #374151; }
-      .dialog-actions .primary { background: #2563eb; color: #fff; }
+      .dialog-actions .secondary { background: transparent; color: #9ca3af; border: 1px solid #4b5563; }
+      .dialog-actions .secondary:hover { background: rgba(75,85,99,.2); }
+      .dialog-actions .primary { background: transparent; color: #3b82f6; border: 1px solid #3b82f6; }
+      .dialog-actions .primary:hover { background: rgba(59,130,246,.1); }
       .toast {
         position: fixed;
         bottom: 1.5rem;
