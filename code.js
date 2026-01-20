@@ -1,5 +1,6 @@
 const DEFAULT_FILTER = 'today';
 const FILTER_LABELS = {
+  all: 'すべてのタスク',
   today: '今日',
   overdue: '期限切れ',
   tomorrow: '明日',
@@ -291,6 +292,11 @@ function applyFilter(tasks, context, tz) {
     case 'completed':
       filtered = tasks.filter(function (task) {
         return task.isCompleted;
+      });
+      break;
+    case 'all':
+      filtered = tasks.filter(function (task) {
+        return !task.isCompleted;
       });
       break;
     case 'project':
