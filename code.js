@@ -178,6 +178,7 @@ function fetchTasksForList(listId) {
   var pageToken;
   do {
     var response = Tasks.Tasks.list(listId, {
+      showAssigned: true,
       showCompleted: true,
       showHidden: true,
       maxResults: 100,
